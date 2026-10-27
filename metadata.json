@@ -1,0 +1,6 @@
+{
+  "name": "Athletic OS",
+  "description": "Athletic hybrid training OS with deterministic schedule reorganization and recovery tracking",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

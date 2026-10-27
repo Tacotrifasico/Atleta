@@ -1,0 +1,2420 @@
+# ATHLETIC OS
+
+Quiero que construyas una aplicación web full-stack, responsive, mobile-first y modular llamada provisionalmente:
+
+# ATHLETIC OS
+
+Es una aplicación personal para gestionar mi entrenamiento anual, fuerza, hipertrofia, HYROX, kettlebells, calistenia, ciclismo, carrera, natación, Pilates, actividades espontáneas, recuperación y progresión.
+
+## REGLA CRÍTICA SOBRE IA
+
+Google AI Studio se utilizará únicamente como herramienta para construir el software.
+
+**La aplicación final NO debe utilizar Gemini, Gemini API ni ningún otro modelo generativo de Google.**
+
+No quiero:
+
+- Gemini API.
+- llamadas a modelos de lenguaje;
+- API keys de Gemini;
+- generación de rutinas mediante Gemini;
+- análisis mediante Gemini;
+- costos asociados a modelos generativos;
+- `@google/generative-ai`;
+- dependencias de IA pagada.
+
+La aplicación debe funcionar completamente sin una IA generativa integrada.
+
+La inteligencia del sistema se divide en:
+
+1. **motor determinista local**, basado en reglas, para reorganizar entrenamientos ya existentes;
+2. **ChatGPT externo**, que será mi entrenador y cerebro de programación a medio/largo plazo;
+3. **Google Sheets**, que será el puente de datos entre Athletic OS y ChatGPT;
+4. **Garmin**, que aporta datos fisiológicos y de actividades.
+
+Conceptualmente:
+
+GARMIN  
+↓  
+ATHLETIC OS  
+↕  
+GOOGLE SHEETS  
+↕  
+CHATGPT
+
+La app registra y reorganiza.
+
+Garmin observa.
+
+Sheets conserva y comunica.
+
+ChatGPT analiza y programa.
+
+---
+
+# 1. OBJETIVO DEL SISTEMA
+
+No quiero una app genérica de gimnasio.
+
+Quiero un sistema personal de entrenamiento híbrido capaz de gestionar:
+
+- fuerza;
+- hipertrofia;
+- kettlebells;
+- máquinas;
+- poleas;
+- calistenia;
+- HYROX;
+- ciclismo;
+- MTB/enduro;
+- carrera;
+- natación;
+- Pilates;
+- caminatas;
+- senderismo;
+- deportes espontáneos;
+- viajes;
+- recuperación;
+- semanas de descarga;
+- progresión;
+- PRs;
+- notas;
+- datos Garmin;
+- planificación anual.
+
+Mi objetivo físico es desarrollar un cuerpo atlético:
+
+- espalda en V;
+- hombros desarrollados;
+- pecho visible;
+- brazos densos;
+- core fuerte;
+- piernas atléticas;
+- buena movilidad;
+- alta capacidad cardiovascular;
+- buena fuerza relativa.
+
+La referencia estética actual es un físico tipo Spider-Man atlético: musculoso, compacto, fuerte, móvil y con buena relación fuerza/peso.
+
+No busco culturismo extremo.
+
+---
+
+# 2. FILOSOFÍA
+
+Separar claramente:
+
+**PLAN → EJECUCIÓN → ACTIVIDAD REAL → RECUPERACIÓN → REORGANIZACIÓN → ANÁLISIS → PROGRESIÓN**
+
+La app debe entender que:
+
+- el plan puede cambiar;
+- hacer algo diferente no significa perder la semana;
+- una actividad espontánea afecta lo que conviene hacer después;
+- descansar también es parte del entrenamiento;
+- la carga semanal importa más que cumplir ciegamente un calendario;
+- cansancio no equivale necesariamente a entrenamiento productivo;
+- diversión y adherencia también importan.
+
+---
+
+# 3. DOS NIVELES DE DECISIÓN
+
+## NIVEL A — MOTOR LOCAL DE ATHLETIC OS
+
+Debe funcionar sin ChatGPT.
+
+Puede:
+
+- intercambiar días;
+- mover sesiones;
+- retrasar sesiones;
+- adelantar sesiones;
+- insertar actividades espontáneas;
+- recomendar descanso;
+- reducir volumen;
+- cambiar una sesión por una variante previamente autorizada;
+- seleccionar sustituciones previamente guardadas;
+- evitar interferencias;
+- reaccionar ante una salida larga de bici;
+- reaccionar ante carrera, Pilates, natación, senderismo, etc.
+
+Pero NO puede inventar arbitrariamente un nuevo programa.
+
+Debe trabajar con:
+
+- el plan ya aprobado;
+- variantes predefinidas;
+- ejercicios disponibles;
+- reglas conocidas.
+
+## NIVEL B — CHATGPT
+
+ChatGPT se ocupa de:
+
+- revisar evolución;
+- decidir progresiones importantes;
+- crear nuevas semanas;
+- modificar mesociclos;
+- cambiar prioridades;
+- decidir semanas de descarga;
+- introducir ejercicios nuevos;
+- interpretar tendencias;
+- revisar notas;
+- actualizar el plan anual;
+- analizar Garmin junto con rendimiento subjetivo;
+- decidir qué estamos intentando mejorar.
+
+---
+
+# 4. PRINCIPIO FUNDAMENTAL DEL REORGANIZADOR
+
+La app debe entender:
+
+> "Quiero hacer algo diferente mañana" NO significa "elimina el entrenamiento".
+
+Debe reorganizar **lo que ya estaba pactado**.
+
+Ejemplo:
+
+Plan:
+
+Lunes fuerza  
+Martes espalda  
+Miércoles descanso  
+Jueves HYROX  
+Viernes potencia  
+Domingo bici
+
+El usuario dice:
+
+> "Mañana quiero hacer 6 horas de bicicleta."
+
+La app analiza qué sesión estaba planeada y qué viene después.
+
+Debe proponer una nueva distribución utilizando las sesiones existentes.
+
+No inventar una nueva rutina.
+
+---
+
+# 5. MOTOR DE REORGANIZACIÓN SEMANAL
+
+Crear un módulo independiente:
+
+`ScheduleAdjustmentEngine`
+
+No usar IA.
+
+Usar reglas deterministas y datos estructurados.
+
+Cada sesión debe contener:
+
+- session_id;
+- nombre;
+- día planeado;
+- prioridad;
+- movable;
+- anchor;
+- load_tags;
+- expected_duration;
+- leg_load;
+- upper_load;
+- cardiovascular_load;
+- shoulder_load;
+- grip_load;
+- core_load;
+- impact_load;
+- technical_demand;
+- minimum_gap_before;
+- minimum_gap_after;
+- compatible_with_previous;
+- compatible_with_next;
+- reduced_variant_id;
+- recovery_variant_id.
+
+---
+
+# 6. CARGAS POR SESIÓN
+
+Cada sesión debe estar etiquetada de 0–5 en:
+
+- piernas;
+- pecho;
+- espalda;
+- hombro;
+- brazos;
+- core;
+- cardiovascular;
+- impacto;
+- agarre;
+- fatiga global.
+
+Ejemplo:
+
+HYROX con sled:
+
+piernas 5  
+cardio 4  
+core 3  
+agarre 3  
+fatiga global 5
+
+Espalda + brazos:
+
+piernas 0  
+espalda 4  
+brazos 4  
+cardio 1  
+fatiga global 3
+
+Pilates core:
+
+piernas 1  
+core 4  
+hombro 2  
+cardio 1  
+fatiga global 2
+
+---
+
+# 7. ACTIVIDADES ESPONTÁNEAS
+
+Botón principal:
+
+## + ACTIVIDAD
+
+Opciones:
+
+- bicicleta;
+- MTB/enduro;
+- carrera;
+- natación;
+- Pilates;
+- caminata;
+- senderismo;
+- kayak;
+- deporte;
+- clase;
+- otro.
+
+También:
+
+## "QUIERO HACER ESTO MAÑANA"
+
+Debe abrir modo **What If**.
+
+Ejemplo:
+
+"6 horas bicicleta"
+
+La aplicación calcula cómo afectaría la semana ANTES de modificarla.
+
+Mostrar:
+
+### Impacto estimado
+
+Piernas: muy alto  
+Cardio: muy alto  
+Duración: extrema  
+Interferencia con siguiente sesión: alta
+
+### Propuesta
+
+Domingo: bici 6 h  
+Lunes: recuperación / torso ligero  
+Martes: fuerza habitual  
+etc.
+
+Botones:
+
+**Aplicar cambio**
+
+**Mantener plan**
+
+---
+
+# 8. REGLAS ESPECÍFICAS PARA CICLISMO
+
+El sistema debe clasificar una salida por:
+
+- duración;
+- HR zones;
+- elevación;
+- tipo;
+- distancia;
+- sensación subjetiva.
+
+No considerar únicamente velocidad.
+
+## Duración
+
+### <45 min
+Carga baja.
+
+### 45–90 min
+Carga moderada.
+
+### 90–180 min
+Carga relevante.
+
+### 3–4 h
+Carga alta.
+
+### >4 h
+Carga muy alta.
+
+### ≥6 h
+Considerar evento de resistencia excepcional.
+
+Aunque gran parte haya sido Z2.
+
+Una salida de 6 horas genera estrés muscular y energético considerable aunque Garmin marque intensidad cardiovascular moderada.
+
+---
+
+# 9. EJEMPLO OBLIGATORIO: 6 HORAS DE BICI
+
+Supongamos:
+
+Domingo:
+6 horas de ciclismo.
+
+El lunes originalmente toca:
+
+piernas + fuerza.
+
+La app NO debe decir:
+
+"Garmin dice 72 horas de recovery, descansa tres días."
+
+Debe analizar:
+
+- duración 6 h;
+- zonas;
+- elevación;
+- pasos;
+- sueño posterior;
+- dolor de piernas;
+- energía subjetiva;
+- HRV;
+- resting HR.
+
+Por defecto:
+
+## Día siguiente a salida ≥4 h
+
+No programar automáticamente:
+
+- sentadilla pesada;
+- Bulgarian pesado;
+- sled push pesado;
+- sled pull pesado;
+- lunges altos;
+- carrera intensa;
+- intervalos;
+- HYROX pesado.
+
+Prioridad:
+
+1. descanso;
+2. movilidad;
+3. caminata suave;
+4. natación regenerativa;
+5. torso si recuperación subjetiva es buena.
+
+Si existe una sesión de torso prevista durante la semana, puede adelantar esa sesión.
+
+Ejemplo:
+
+Original:
+
+Lunes pierna/fuerza  
+Martes espalda/brazos  
+Miércoles descanso  
+Jueves HYROX
+
+Después de 6 h bici:
+
+Lunes espalda/brazos  
+Martes descanso o fuerza ajustada según recuperación  
+Miércoles fuerza  
+Jueves HYROX
+
+O:
+
+Lunes recuperación  
+Martes espalda/brazos  
+Miércoles fuerza  
+Jueves descanso  
+Viernes HYROX
+
+El algoritmo debe escoger la opción con menos interferencia.
+
+---
+
+# 10. NO TOMAR GARMIN RECOVERY TIME COMO LEY
+
+Esto es MUY IMPORTANTE.
+
+Garmin puede proporcionar estimaciones de tiempo de recuperación.
+
+Athletic OS puede:
+
+- mostrarlas;
+- guardarlas;
+- incluirlas en información contextual.
+
+Pero:
+
+**NUNCA usar Garmin Recovery Time como una prohibición rígida.**
+
+No hacer:
+
+`if recovery_hours > 24 → rest`
+
+No hacer:
+
+`Garmin says 48h → block workout`
+
+No hacer:
+
+`Recovery time becomes scheduler master variable`
+
+Garmin Recovery Time debe considerarse una señal secundaria.
+
+Mostrarlo como:
+
+"Garmin estima X h de recuperación"
+
+pero agregar:
+
+"Se utiliza como referencia, no como regla."
+
+---
+
+# 11. JERARQUÍA DE RECUPERACIÓN
+
+Para reorganizar la semana, dar prioridad aproximadamente en este orden:
+
+1. actividad real realizada;
+2. duración real;
+3. intensidad real;
+4. tipo de esfuerzo;
+5. dolor muscular reportado;
+6. energía subjetiva;
+7. sueño;
+8. HRV respecto a baseline personal;
+9. resting HR respecto a baseline;
+10. estrés;
+11. Body Battery;
+12. Garmin Recovery Time.
+
+Recovery Time debe estar al final del grupo de señales importantes.
+
+Nunca decidir basándose exclusivamente en él.
+
+---
+
+# 12. RECUPERACIÓN SUBJETIVA
+
+Cada mañana permitir registro rápido:
+
+## ¿Cómo amaneciste?
+
+Energía:
+1–5
+
+Piernas:
+1–5
+
+Torso:
+1–5
+
+Dolor muscular:
+1–5
+
+Estrés:
+1–5
+
+Motivación:
+1–5
+
+Dormí bien:
+Sí / Regular / No
+
+Opcional:
+
+nota libre.
+
+Esto puede tener más peso que una métrica aislada de Garmin.
+
+---
+
+# 13. HRV
+
+No usar umbrales universales.
+
+Comparar únicamente conmigo mismo.
+
+Calcular:
+
+- promedio 7 días;
+- promedio 28 días;
+- promedio 90 días;
+- desviación reciente.
+
+No mostrar:
+
+"HRV de 50 es malo."
+
+Mostrar:
+
+"HRV 8% debajo de tu media de 28 días."
+
+---
+
+# 14. RESTING HEART RATE
+
+Igual:
+
+comparar con baseline personal.
+
+Mostrar:
+
+RHR actual  
+media 7d  
+media 28d  
+diferencia
+
+No convertir pequeñas variaciones en alarmas.
+
+---
+
+# 15. READINESS
+
+Crear indicador:
+
+### VERDE
+entrenamiento normal.
+
+### AMARILLO
+entrenamiento permitido, quizá ajustar volumen.
+
+### ROJO
+recomendar recuperación.
+
+Pero siempre mostrar razones.
+
+Ejemplo:
+
+AMARILLO
+
+- 6 h de bici ayer;
+- piernas 4/5 dolor;
+- HRV -5%;
+- RHR normal;
+- sueño normal.
+
+Recomendación:
+
+"Adelantar sesión de torso y mover piernas."
+
+No diagnosticar.
+
+No reemplazar consejo médico.
+
+---
+
+# 16. CONFLICT ENGINE
+
+Crear función:
+
+`calculateInterference(activityA, activityB)`
+
+Debe analizar:
+
+- músculos;
+- sistema cardiovascular;
+- impacto;
+- duración;
+- intensidad;
+- agarre;
+- hombro;
+- core;
+- proximidad temporal.
+
+Resultado:
+
+LOW  
+MODERATE  
+HIGH  
+VERY_HIGH
+
+Ejemplos:
+
+6 h bici → Bulgarian pesado siguiente día:
+VERY_HIGH
+
+Pilates core → espalda/brazos:
+LOW
+
+Natación intensa → hombro pesado:
+MODERATE/HIGH
+
+Carrera intervalos → HYROX:
+HIGH
+
+Caminata 30 min → torso:
+LOW
+
+20,000 pasos → piernas pesadas:
+MODERATE
+
+---
+
+# 17. REGLAS POR ACTIVIDAD
+
+## BICI Z2 <90 min
+
+Generalmente compatible.
+
+## BICI 90–180 min
+
+Reducir o separar pierna pesada.
+
+## BICI >3 h
+
+Considerar carga alta de tren inferior.
+
+## BICI ≥6 h
+
+Considerar evento muy demandante.
+
+Día siguiente:
+preferir descanso o torso.
+
+---
+
+## MTB / ENDURO
+
+Considerar adicionalmente:
+
+- agarre;
+- brazos;
+- hombros;
+- core;
+- impacto;
+- piernas.
+
+No tratarlo igual que bici plana Z2.
+
+---
+
+## CARRERA
+
+<45 min Z2:
+moderada.
+
+Tempo/intervalos:
+alta interferencia con pierna.
+
+>90 min:
+carga alta.
+
+---
+
+## NATACIÓN
+
+Suave:
+puede actuar como recuperación activa.
+
+Intensa:
+carga de cardio + hombro + espalda.
+
+---
+
+## PILATES
+
+Registrar foco:
+
+- core;
+- hombros;
+- piernas;
+- full body;
+- movilidad.
+
+Puede sustituir accesorios similares.
+
+Ejemplo:
+
+Pilates hombro/core
+
+→ considerar cumplido parte del trabajo accesorio de hombro/core.
+
+No eliminar movimientos ancla de fuerza automáticamente.
+
+---
+
+## CAMINATA
+
+<10k pasos:
+actividad habitual.
+
+10–15k:
+carga ligera.
+
+15–20k:
+carga moderada.
+
+>20k:
+carga adicional significativa si existe otra actividad.
+
+---
+
+# 18. REORGANIZAR, NO ELIMINAR
+
+Cuando existe conflicto:
+
+orden de solución:
+
+### 1. mover sesión;
+
+### 2. intercambiar sesiones;
+
+### 3. insertar descanso;
+
+### 4. reducir volumen;
+
+### 5. usar variante reducida;
+
+### 6. sustituir accesorios;
+
+### 7. solo en último caso eliminar una sesión.
+
+Nunca borrar un entrenamiento silenciosamente.
+
+---
+
+# 19. VARIANTES DE SESIÓN
+
+Cada sesión puede tener:
+
+FULL  
+REDUCED  
+RECOVERY
+
+Ejemplo:
+
+FULL:
+100% del volumen.
+
+REDUCED:
+60–75%.
+
+RECOVERY:
+30–50%, técnica/movimiento.
+
+Las variantes deben estar definidas previamente por ChatGPT o por reglas del programa.
+
+La app no inventa ejercicios nuevos.
+
+---
+
+# 20. PROTEGER MOVIMIENTOS ANCLA
+
+Etiquetar ejercicios:
+
+## ANCHOR
+
+Ejemplos:
+
+- dominadas;
+- press militar;
+- jalón;
+- sled;
+- carries.
+
+## ROTATION
+
+Ejemplos:
+
+- Bulgarian;
+- step-up;
+- landmine;
+- high pull;
+- snatch;
+- wall balls.
+
+## ACCESSORY
+
+Ejemplos:
+
+- laterales;
+- curl;
+- tríceps;
+- Pallof;
+- face pull.
+
+Al reorganizar:
+
+primero preservar ANCHORS.
+
+Después ROTATION.
+
+Accesorios pueden reducirse primero.
+
+---
+
+# 21. PLAN SEMANAL DRAG & DROP
+
+Vista lunes-domingo.
+
+Cada día tarjeta draggable.
+
+Mover:
+
+Jueves HYROX
+
+a:
+
+Miércoles.
+
+Antes de guardar:
+
+mostrar análisis.
+
+Ejemplo:
+
+"Este cambio mantiene 24 h desde espalda/brazos y libera jueves como recuperación. Compatible."
+
+Botón:
+
+APLICAR.
+
+---
+
+# 22. CAMBIOS RÁPIDOS
+
+Desde Hoy:
+
+- Hoy descanso.
+- Hoy bici.
+- Hoy corro.
+- Hoy nado.
+- Hoy Pilates.
+- Hoy estoy en casa.
+- Hoy tengo otro gym.
+- Hoy tengo poco tiempo.
+- Máquina ocupada.
+- Viajo.
+- Me siento cansado.
+- Tengo energía de sobra.
+
+Cada acción debe recalcular la semana.
+
+---
+
+# 23. MODO "TENGO X MINUTOS"
+
+Permitir:
+
+15 min  
+30 min  
+45 min  
+60 min  
+90 min
+
+La app busca variante compatible del entrenamiento existente.
+
+No inventar una sesión aleatoria.
+
+---
+
+# 24. DASHBOARD HOY
+
+Mostrar:
+
+- fecha;
+- semana;
+- fase anual;
+- entrenamiento;
+- duración estimada;
+- Garmin resumen;
+- readiness;
+- actividad ayer;
+- próxima sesión;
+- cambios pendientes;
+- notas.
+
+Botón grande:
+
+# INICIAR ENTRENAMIENTO
+
+---
+
+# 25. ENTRENAMIENTO
+
+Cada ejercicio:
+
+Nombre  
+Equipo  
+Peso  
+kg/lb  
+Sets  
+Reps  
+Descanso  
+Orden  
+Prioridad  
+Notas  
+Histórico  
+PR
+
+---
+
+# 26. ORDEN DE EJERCICIOS
+
+MUY IMPORTANTE.
+
+La rutina debe tener orden fisiológicamente lógico.
+
+Prioridad:
+
+1. movimientos técnicos/pesados;
+2. movimientos principales;
+3. máquinas importantes;
+4. accesorios;
+5. finisher.
+
+Evitar:
+
+- laterales antes de press militar;
+- pec deck pesado antes del press principal;
+- fatigar piernas antes de movimientos unilaterales técnicos;
+- finisher antes de fuerza.
+
+---
+
+# 27. GYM LLENO
+
+Botón:
+
+## OCUPADO
+
+Si una máquina está ocupada:
+
+mostrar:
+
+### Opción 1
+adelantar otro ejercicio compatible.
+
+### Opción 2
+esperar y reordenar.
+
+### Opción 3
+usar sustitución aprobada.
+
+Nunca simplemente saltar ejercicio.
+
+---
+
+# 28. PRIORIDADES
+
+Cada ejercicio:
+
+PRIORIDAD A  
+PRIORIDAD B  
+ACCESORIO
+
+A debe preservarse.
+
+B puede cambiar posición.
+
+Accesorio es flexible.
+
+---
+
+# 29. PESOS REALES
+
+Nunca inventar incrementos imposibles.
+
+Guardar inventario por gimnasio.
+
+Ejemplo:
+
+Mancuernas:
+
+5  
+10  
+15  
+20  
+25  
+30  
+35  
+40  
+45  
+50 lb
+
+No recomendar 27.5 lb si no existen.
+
+---
+
+# 30. EQUIPO POR UBICACIÓN
+
+Perfiles:
+
+## Gym principal
+
+máquinas  
+poleas  
+mancuernas  
+KB
+
+## Gym HYROX
+
+sled  
+SkiErg  
+rower  
+sandbags  
+wall balls  
+landmine  
+etc.
+
+## Casa
+
+KB 35 lb  
+ligas
+
+## Otro gym
+
+editable.
+
+---
+
+# 31. CONVERSIONES
+
+Selector global:
+
+LB  
+KG  
+AMBOS
+
+Mostrar siempre conversión.
+
+Ejemplo:
+
+40 lb / 18.1 kg
+
+Sin alterar valor original registrado.
+
+---
+
+# 32. PESO POR MANO
+
+Mostrar claramente:
+
+25 lb / 11.3 kg **por mano**
+
+Total:
+
+50 lb / 22.7 kg.
+
+---
+
+# 33. PLATE-LOADED
+
+Ejemplo:
+
+Chest press.
+
+Mostrar:
+
+## Por lado
+50 lb / 22.7 kg
+
+## Total discos
+100 lb / 45.4 kg
+
+## Peso máquina
+desconocido/opcional.
+
+Nunca confundir peso total con peso por lado.
+
+---
+
+# 34. SLED
+
+Registrar:
+
+- peso discos;
+- peso sled vacío si se conoce;
+- peso total;
+- superficie;
+- distancia;
+- sets.
+
+Ejemplo:
+
+Sled push:
+
+100 lb / 45.4 kg discos  
++ sled  
+3 × 15 m.
+
+---
+
+# 35. COMPLETADO DE SETS
+
+Regla personal importante:
+
+Normalmente completo toda la rutina.
+
+A veces olvido marcar casillas.
+
+Por ello:
+
+casilla vacía ≠ ejercicio omitido.
+
+Al cerrar entrenamiento:
+
+"Hay sets sin marcar. ¿Los realizaste?"
+
+Default:
+
+Sí.
+
+Estados:
+
+COMPLETED  
+COMPLETED_UNLOGGED  
+SKIPPED  
+MODIFIED
+
+Solo considerar omitido cuando selecciono explícitamente SKIPPED.
+
+---
+
+# 36. NOTAS TIPO NOTION
+
+Permitir notas:
+
+por ejercicio  
+por set  
+por día  
+por semana  
+por bloque.
+
+Conservar texto original.
+
+Ejemplos:
+
+"Me puso a parir chayotes."
+
+"Me pasé de listo."
+
+"Gran implementación."
+
+"Terminó fácil."
+
+"Quiero algo más salvaje."
+
+"Me aburrí."
+
+No sanitizar tono.
+
+---
+
+# 37. SATISFACCIÓN
+
+Al finalizar:
+
+## ¿Sentiste que entrenaste?
+
+1–5
+
+## ¿Qué tan divertido fue?
+
+1–5
+
+## Energía restante
+
+0–100%
+
+## Repetirías la sesión
+
+Sí  
+Con cambios  
+No
+
+---
+
+# 38. DIFICULTAD POR EJERCICIO
+
+Después de un movimiento permitir:
+
+Fácil  
+Correcto  
+Exigente  
+Muy exigente
+
+No utilizar necesariamente RPE numérico.
+
+---
+
+# 39. BIBLIOTECA DE EJERCICIOS
+
+Campos:
+
+- exercise_id;
+- nombre;
+- músculos;
+- patrón;
+- equipo;
+- gym;
+- unilateral;
+- bilateral;
+- peso;
+- incrementos;
+- sustituciones;
+- categoría;
+- anchor;
+- priority;
+- video;
+- notas;
+- orden recomendado.
+
+Categorías:
+
+kettlebell  
+máquina  
+polea  
+mancuerna  
+barra  
+calistenia  
+HYROX  
+cardio  
+core  
+movilidad.
+
+---
+
+# 40. VARIACIÓN
+
+No quiero monotonía.
+
+Pero tampoco ejercicios aleatorios.
+
+Mantener ANCHORS 4–8 semanas.
+
+Rotar secundarios cada 2–4 semanas.
+
+Registrar:
+
+date_added  
+date_removed  
+rotation_reason.
+
+---
+
+# 41. PROGRESIÓN
+
+Reglas:
+
+máximo habitual 15 reps.
+
+Primero:
+
++1 rep.
+
+Después:
+
+siguiente peso REAL.
+
+Si salto de peso es grande:
+
+bajar reps.
+
+Ejemplo:
+
+25 lb × 10
+
+→
+
+30 lb × 8.
+
+---
+
+# 42. PRs
+
+Tipos:
+
+LOAD_PR  
+REP_PR  
+VOLUME_PR  
+CAPACITY_PR  
+TECHNICAL_PR.
+
+Ejemplos:
+
+Dominadas:
+5 reps.
+
+Farmer:
+45 lb/mano × 30 m.
+
+Sled:
+100 lb + sled × 15 m.
+
+---
+
+# 43. GARMIN PERSONAL API
+
+Utilizar la Garmin Connect Personal API oficial.
+
+Implementar:
+
+`GarminProvider`
+
+Primera implementación:
+
+`OfficialGarminPersonalProvider`
+
+No usar scraping como sistema principal.
+
+---
+
+# 44. SEGURIDAD GARMIN
+
+La API key de Garmin:
+
+server-side únicamente.
+
+Nunca:
+
+frontend  
+localStorage  
+GitHub  
+código público.
+
+Generar tokens server-side.
+
+---
+
+# 45. DATOS GARMIN
+
+Sincronizar cuando estén disponibles:
+
+HRV  
+resting HR  
+heart rate  
+sleep  
+sleep score  
+steps  
+stress  
+Body Battery  
+weight  
+activities.
+
+Actividades:
+
+tipo  
+fecha  
+duración  
+distancia  
+FC promedio  
+FC máxima  
+Z1  
+Z2  
+Z3  
+Z4  
+Z5  
+elevación  
+calorías  
+actividad ID.
+
+---
+
+# 46. NO DEPENDER DE GARMIN PARA TODO
+
+Garmin es una fuente de información.
+
+No autoridad.
+
+Si Garmin dice:
+
+Recovery 50 h
+
+pero:
+
+usuario se siente bien;  
+HRV normal;  
+RHR normal;  
+actividad fue torso;
+
+la app no debe obligar 50 h de descanso.
+
+---
+
+# 47. DATOS FALTANTES
+
+Si no hay Garmin:
+
+la app sigue funcionando.
+
+Usar:
+
+- plan;
+- sesiones;
+- actividad manual;
+- percepción;
+- notas.
+
+---
+
+# 48. GOOGLE SHEETS
+
+Google Sheets será el repositorio compartido con ChatGPT.
+
+No hacer una única hoja gigantesca.
+
+Crear:
+
+CONFIG  
+ANNUAL_PLAN  
+WEEKLY_PLAN  
+SESSIONS  
+SETS  
+EXERCISES  
+ACTIVITIES  
+GARMIN_DAILY  
+GARMIN_ACTIVITIES  
+PRS  
+NOTES  
+COACH_STATE  
+COACH_REQUESTS  
+COACH_PLAN  
+COACH_DECISIONS  
+CHANGE_LOG.
+
+---
+
+# 49. CONFIG
+
+Campos:
+
+user_id  
+year  
+current_week  
+primary_unit  
+current_phase  
+current_gym  
+weight  
+goal  
+schedule_preferences.
+
+---
+
+# 50. ANNUAL_PLAN
+
+Campos:
+
+year  
+week_number  
+start_date  
+end_date  
+block  
+phase  
+focus  
+planned_load  
+deload  
+test_week  
+status  
+notes.
+
+---
+
+# 51. WEEKLY_PLAN
+
+Campos:
+
+date  
+week  
+day  
+session_id  
+session_type  
+priority  
+movable  
+planned_order  
+status  
+variant.
+
+---
+
+# 52. SESSIONS
+
+Campos:
+
+session_id  
+date  
+name  
+planned_duration  
+actual_duration  
+satisfaction  
+fun_score  
+energy_remaining  
+notes  
+status.
+
+---
+
+# 53. SETS
+
+Campos:
+
+session_id  
+exercise_id  
+order  
+set_number  
+target_reps  
+actual_reps  
+weight_original  
+unit_original  
+weight_kg  
+weight_lb  
+weight_per_side  
+assistance  
+status.
+
+---
+
+# 54. ACTIVITIES
+
+Campos:
+
+activity_id  
+source  
+date  
+type  
+duration  
+distance  
+intensity  
+zone1  
+zone2  
+zone3  
+zone4  
+zone5  
+elevation  
+notes.
+
+source:
+
+MANUAL  
+GARMIN.
+
+---
+
+# 55. GARMIN_DAILY
+
+date  
+hrv  
+hrv_7d  
+hrv_28d  
+resting_hr  
+rhr_7d  
+rhr_28d  
+sleep_duration  
+sleep_score  
+body_battery  
+stress  
+steps  
+recovery_time.
+
+Recordar:
+
+`recovery_time` solo informativo.
+
+---
+
+# 56. COACH_STATE
+
+Esta pestaña debe condensar automáticamente el estado actual para ChatGPT.
+
+Incluir:
+
+current_week  
+phase  
+last_7_days  
+last_28_days  
+latest_training  
+current_PRs  
+current_weights  
+Garmin_summary  
+recent_activities  
+recovery  
+subjective_feedback  
+recent_notes  
+next_planned_sessions  
+schedule_changes.
+
+Debe mantenerse compacta.
+
+---
+
+# 57. COACH_REQUESTS
+
+Permitir desde la app:
+
+## SOLICITAR REVISIÓN
+
+Tipos:
+
+NEXT_WEEK  
+PLAN_REVIEW  
+DELOAD_REVIEW  
+EXERCISE_CHANGE  
+ANNUAL_REVIEW  
+INJURY_CONTEXT  
+OTHER.
+
+Guardar:
+
+date  
+request_type  
+question  
+constraints  
+status.
+
+---
+
+# 58. COACH_PLAN
+
+Esta pestaña recibe el entrenamiento diseñado por ChatGPT.
+
+Campos:
+
+plan_version  
+week  
+day  
+session_id  
+order  
+exercise_id  
+exercise_name  
+weight  
+unit  
+sets  
+reps  
+distance  
+rest  
+priority  
+notes.
+
+La app importa automáticamente el plan.
+
+---
+
+# 59. COACH_DECISIONS
+
+Guardar:
+
+date  
+decision  
+reason  
+source  
+affected_sessions  
+accepted  
+notes.
+
+source:
+
+CHATGPT  
+LOCAL_RULE_ENGINE  
+USER.
+
+---
+
+# 60. CHANGE_LOG
+
+Toda modificación importante:
+
+ANTES  
+DESPUÉS  
+RAZÓN  
+FECHA  
+ORIGEN.
+
+Ejemplo:
+
+Original:
+lunes legs.
+
+Nuevo:
+lunes upper.
+
+Razón:
+6h cycling Sunday.
+
+Origen:
+LOCAL_RULE_ENGINE.
+
+---
+
+# 61. EXPORTAR PARA CHATGPT
+
+Botón:
+
+# PREPARAR CONTEXTO
+
+Debe generar resumen humano legible:
+
+SEMANA  
+FASE  
+PESO  
+ACTIVIDAD 7D  
+ACTIVIDAD 28D  
+GARMIN  
+RECUPERACIÓN  
+SESIONES  
+PRs  
+NOTAS  
+CAMBIOS  
+PLAN ACTUAL  
+PRÓXIMAS SESIONES  
+RESTRICCIONES.
+
+Guardar en COACH_STATE.
+
+---
+
+# 62. BOTÓN "REVISAR CON CHATGPT"
+
+No llamar API de ChatGPT automáticamente.
+
+Simplemente:
+
+1. sincronizar Sheets;
+2. crear Coach State;
+3. indicar:
+
+"Datos listos para revisión en ChatGPT."
+
+Opcionalmente copiar al clipboard:
+
+"Revisa Athletic OS y prepara mi siguiente semana."
+
+---
+
+# 63. PLAN ANUAL
+
+Vista 52 semanas.
+
+Cada semana:
+
+número  
+fecha  
+fase  
+objetivo  
+carga  
+deload  
+test  
+status.
+
+Colores:
+
+Base  
+Progresión  
+Alta carga  
+Deload  
+Test  
+Viaje  
+Recuperación  
+Adaptada.
+
+---
+
+# 64. MACROCICLO
+
+Estructura inicial editable de 13 × 4 semanas.
+
+Ejemplo:
+
+1 Base técnica  
+2 Hipertrofia atlética  
+3 Fuerza  
+4 Capacidad híbrida  
+5 Hipertrofia torso  
+6 Fuerza II  
+7 HYROX técnica  
+8 Potencia  
+9 Hipertrofia II  
+10 Fuerza relativa  
+11 HYROX capacidad  
+12 PR/test  
+13 Transición.
+
+No modificar automáticamente sin aprobación externa de ChatGPT/usuario.
+
+---
+
+# 65. DELOAD
+
+La app puede detectar señales para sugerir:
+
+"Revisión de deload recomendada."
+
+Pero no rediseñarlo usando IA.
+
+Generar COACH_REQUEST.
+
+Señales:
+
+rendimiento decreciente  
+fatiga repetida  
+sueño bajo  
+HRV bajo respecto a baseline  
+RHR elevado  
+estrés  
+DOMS  
+muchas actividades externas.
+
+---
+
+# 66. DASHBOARD ANUAL
+
+Mostrar:
+
+semana actual  
+fase  
+bloque  
+semanas hasta deload  
+semanas hasta test  
+progreso del bloque.
+
+---
+
+# 67. MODO NOTION
+
+Quiero interacción similar a Notion:
+
+- cards;
+- collapsible sections;
+- drag/drop;
+- notas inline;
+- bloques reordenables;
+- checkboxes;
+- comentarios;
+- estados;
+- páginas de semana.
+
+---
+
+# 68. DASHBOARD MODULAR
+
+Botón:
+
+EDITAR DASHBOARD.
+
+Widgets:
+
+Hoy  
+Semana  
+Garmin  
+Readiness  
+PRs  
+Cardio  
+Peso  
+Notas  
+Plan anual  
+Actividades  
+Coach.
+
+Permitir:
+
+mover  
+ocultar  
+redimensionar.
+
+---
+
+# 69. MODO ENTRENAMIENTO
+
+Pantalla extremadamente simple.
+
+Ejemplo:
+
+PRESS MILITAR
+
+40 lb / 18 kg
+
+SET 2/4
+
+8 reps
+
+[- peso] [40 lb] [+ peso]
+
+[- reps] [8] [+ reps]
+
+[✓ COMPLETADO]
+
+[NOTA]
+
+[OCUPADO]
+
+Cronómetro visible.
+
+---
+
+# 70. PESOS DISPONIBLES
+
+Cuando pulso +:
+
+no incrementar matemáticamente.
+
+Consultar inventario.
+
+Ejemplo:
+
+actual 25 lb.
+
+Siguiente disponible:
+30 lb.
+
+No:
+27.5.
+
+---
+
+# 71. OFFLINE
+
+Entrenamiento debe funcionar sin internet.
+
+Usar IndexedDB/local persistence.
+
+Sincronizar después.
+
+Nunca perder sets.
+
+---
+
+# 72. SINCRONIZACIÓN
+
+Estado visible:
+
+SINCRONIZADO  
+PENDIENTE  
+ERROR.
+
+IDs estables.
+
+Evitar duplicados.
+
+---
+
+# 73. UX
+
+Diseño:
+
+limpio  
+sobrio  
+premium  
+modular  
+minimalista  
+atlético.
+
+No estética médica.
+
+No dashboard lleno de gráficas.
+
+Mobile-first.
+
+Dark mode excelente.
+
+---
+
+# 74. COSTOS
+
+El sistema debe funcionar sin pagar ningún modelo de IA.
+
+No incluir dependencias que requieran Gemini.
+
+Preferir servicios gratuitos o con free tier cuando sea razonable.
+
+---
+
+# 75. ARQUITECTURA
+
+TypeScript.
+
+Frontend React.
+
+Backend Node server-side.
+
+Separar:
+
+`domain/`
+
+`training/`
+
+`scheduling/`
+
+`garmin/`
+
+`sheets/`
+
+`storage/`
+
+`ui/`
+
+`analytics/`
+
+No construir un archivo monolítico.
+
+---
+
+# 76. MÓDULOS PRINCIPALES
+
+Implementar clases/servicios:
+
+`TrainingPlanService`
+
+`ScheduleAdjustmentEngine`
+
+`InterferenceEngine`
+
+`ActivityLoadEngine`
+
+`RecoverySignalEngine`
+
+`ProgressionTracker`
+
+`GarminProvider`
+
+`SheetsProvider`
+
+`EquipmentService`
+
+`ExerciseLibraryService`
+
+`CoachBridgeService`
+
+---
+
+# 77. IMPORTANTE: MOTOR DETERMINISTA
+
+No llamar modelos de lenguaje desde:
+
+`ScheduleAdjustmentEngine`
+
+`InterferenceEngine`
+
+`RecoverySignalEngine`
+
+Todas las decisiones deben ser reproducibles y explicables.
+
+Ejemplo:
+
+"Movimos Legs del lunes al miércoles porque Cycling 6h generó VERY_HIGH leg load."
+
+---
+
+# 78. EXPLICABILIDAD
+
+Toda recomendación local debe decir:
+
+QUÉ CAMBIÓ
+
+POR QUÉ
+
+QUÉ DATO ACTIVÓ LA REGLA
+
+QUÉ SESIÓN SE MOVIÓ
+
+QUÉ QUEDA PENDIENTE.
+
+---
+
+# 79. USER OVERRIDE
+
+Siempre poder seleccionar:
+
+"Entrenar de todos modos."
+
+La app advierte pero no bloquea.
+
+Excepto errores puramente técnicos.
+
+---
+
+# 80. ESCENARIOS DE PRUEBA OBLIGATORIOS
+
+Crear tests para:
+
+### Caso A
+
+Domingo:
+6h bici.
+
+Lunes:
+pierna pesada.
+
+Resultado:
+reorganizar.
+
+---
+
+### Caso B
+
+Miércoles:
+Pilates hombro/core.
+
+Jueves:
+HYROX.
+
+Resultado:
+mantener HYROX pero reducir accesorios duplicados si corresponde.
+
+---
+
+### Caso C
+
+Martes:
+20,000 pasos.
+
+Miércoles:
+Sled pesado.
+
+Resultado:
+mostrar carga acumulada y revisar, no cancelar automáticamente.
+
+---
+
+### Caso D
+
+Garmin:
+Recovery 60h.
+
+Usuario:
+sin DOMS, buen sueño, HRV normal, RHR normal.
+
+Resultado:
+NO obligar 60h descanso.
+
+---
+
+### Caso E
+
+HRV baja + RHR alta + sueño pobre + usuario cansado.
+
+Resultado:
+sugerir reducir/mover sesión.
+
+---
+
+### Caso F
+
+Máquina ocupada.
+
+Resultado:
+reordenar ejercicios respetando prioridades.
+
+---
+
+### Caso G
+
+Usuario mueve HYROX de jueves a miércoles.
+
+Resultado:
+recalcular resto de semana.
+
+---
+
+# 81. MVP
+
+## FASE 1
+
+Hoy  
+Semana  
+Modo entrenamiento  
+Logging  
+kg/lb  
+Equipamiento  
+Notas  
+Schedule Adjustment Engine  
+Google Sheets.
+
+## FASE 2
+
+Garmin  
+readiness  
+actividad espontánea  
+What If  
+interference engine.
+
+## FASE 3
+
+Plan anual  
+PRs  
+Coach Bridge  
+deload review  
+dashboard avanzado.
+
+---
+
+# 82. PRIMER ENTREGABLE
+
+Primero construir:
+
+1. arquitectura;
+2. modelos TypeScript;
+3. navegación;
+4. modelo de datos;
+5. motor de reorganización;
+6. pantalla Hoy;
+7. Semana draggable;
+8. Training Mode;
+9. actividad espontánea;
+10. simulador What If.
+
+Usar mock data.
+
+No conectar Garmin todavía hasta que las reglas funcionen.
+
+---
+
+# 83. SEGUNDO ENTREGABLE
+
+Después:
+
+Google Sheets.
+
+Debe existir sincronización bidireccional:
+
+APP → SHEETS
+
+y
+
+SHEETS → APP.
+
+Esto es necesario para que ChatGPT pueda modificar planes.
+
+---
+
+# 84. TERCER ENTREGABLE
+
+Garmin Personal API.
+
+Añadirla solamente cuando:
+
+schedule engine  
+logging  
+Sheets sync
+
+estén funcionando correctamente.
+
+---
+
+# 85. NO SOBRECOMPLICAR EL MVP
+
+No necesito:
+
+red social  
+chat interno  
+gamificación infantil  
+avatares  
+leaderboards  
+marketplace.
+
+Necesito una herramienta extremadamente buena para entrenar.
+
+---
+
+# 86. CRITERIOS DE ÉXITO
+
+Debo poder abrir la app y responder inmediatamente:
+
+¿Qué entreno hoy?
+
+¿Con cuánto peso?
+
+¿En qué orden?
+
+¿Qué hago si la máquina está ocupada?
+
+¿Puedo salir 6 horas en bici mañana?
+
+¿Qué pasa entonces con mi lunes?
+
+¿Puedo hacer Pilates?
+
+¿Debo mover HYROX?
+
+¿Cuánto entrené esta semana?
+
+¿Cómo está mi recuperación?
+
+¿Estoy progresando?
+
+¿Cuál es mi PR?
+
+¿Cuándo toca deload?
+
+¿Cómo está mi plan anual?
+
+¿Qué debo pedirle revisar a ChatGPT?
+
+---
+
+# 87. PRINCIPIO FINAL
+
+Athletic OS no debe intentar reemplazar al entrenador.
+
+Debe ser:
+
+**un sistema operativo del entrenamiento.**
+
+Su función es:
+
+- organizar;
+- registrar;
+- medir;
+- recordar;
+- comparar;
+- reorganizar;
+- sincronizar;
+- explicar.
+
+ChatGPT será responsable del razonamiento avanzado y de la programación estratégica.
+
+El motor local puede tomar decisiones logísticas y de interferencia usando reglas previamente aprobadas.
+
+La meta es que si digo:
+
+> "Mañana quiero hacer seis horas de bici."
+
+Athletic OS pueda responder inmediatamente:
+
+> "Puedes hacerlo. Reorganicé tu semana para proteger el trabajo de piernas y HYROX. Lunes pasa a torso, martes recuperación, miércoles fuerza. Aquí puedes ver exactamente qué cambió."
+
+Sin Gemini.
+
+Sin llamar ninguna IA.
+
+Sin perder el plan que ya habíamos construido.
+
+---
+
+# 88. INSTRUCCIÓN DE IMPLEMENTACIÓN
+
+Antes de escribir componentes finales:
+
+1. presenta la arquitectura propuesta;
+2. presenta modelos TypeScript;
+3. presenta estructura de carpetas;
+4. presenta modelo de datos;
+5. presenta las reglas iniciales de `ScheduleAdjustmentEngine`;
+6. presenta las reglas de `InterferenceEngine`;
+7. implementa tests de los escenarios descritos;
+8. después construye la interfaz.
+
+No sacrifiques arquitectura por generar una demo visual rápidamente.
+
+Quiero primero un sistema sólido y después una interfaz hermosa.
